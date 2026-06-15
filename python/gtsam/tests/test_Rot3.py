@@ -2057,6 +2057,21 @@ class TestRot3(GtsamTestCase):
         np.testing.assert_almost_equal(actual_p, c_p, decimal=6)
         np.testing.assert_almost_equal(actual_u.point3(), c_u.point3(), decimal=6)
 
+    def test_invalid_matrix_raises(self) -> None:
+        """Python wrapper should raise ValueError for invalid rotation matrices."""
+        with self.assertRaises(ValueError):
+            Rot3(np.zeros((3, 3)))
+        with self.assertRaises(ValueError):
+            Rot3(np.diag([2.0, 1.0, 1.0]))
+        # Reflection (det = -1)
+        with self.assertRaises(ValueError):
+            Rot3(np.diag([1.0, 1.0, -1.0]))
+
+    def test_valid_matrix_no_raise(self) -> None:
+        """Valid rotation matrices should construct without error."""
+        Rot3(np.eye(3))
+        Rot3(Rot3.Rz(0.5).matrix())
+
 
 if __name__ == "__main__":
     unittest.main()

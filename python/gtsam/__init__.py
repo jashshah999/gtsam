@@ -73,6 +73,28 @@ def _init():
             return x  # "copy constructor"
         return np.array([x, y, z], dtype=float)
 
+    # Validate rotation matrix input from Python (zero overhead in C++)
+    global Rot3
+    _Rot3_orig = gtsam.Rot3
+
+    class Rot3(_Rot3_orig):
+        def __init__(self, *args, **kwargs):
+            if len(args) == 1 and isinstance(args[0], np.ndarray) and args[0].shape == (3, 3):
+                if not _Rot3_orig.IsValid(args[0], 1e-9):
+                    raise ValueError(
+                        "Rot3: matrix is not a valid rotation "
+                        "(must be orthonormal with det +1). "
+                        "Use Rot3.ClosestTo() to project to the nearest rotation.")
+            super().__init__(*args, **kwargs)
+
+    # Preserve static methods
+    for attr in dir(_Rot3_orig):
+        if attr.startswith('_'):
+            continue
+        orig = getattr(_Rot3_orig, attr)
+        if callable(orig) and not hasattr(Rot3, attr):
+            setattr(Rot3, attr, orig)
+
     # for interactive debugging
     if __name__ == "__main__":
         # we want all definitions accessible
